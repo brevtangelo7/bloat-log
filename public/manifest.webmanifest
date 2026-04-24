@@ -1,0 +1,14 @@
+{
+  "name": "Bloat Log",
+  "short_name": "BloatLog",
+  "description": "Track food & bloating patterns",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#7C4DFF",
+  "background_color": "#F0EEE8",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
