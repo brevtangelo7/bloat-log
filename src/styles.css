@@ -233,7 +233,8 @@ h1, h2, h3, .display { font-family: var(--font-display); font-weight: 600; }
   white-space: nowrap;
 }
 .pill-btn:hover { opacity: 0.85; }
-.pill-btn.sev-low.active  { background: var(--color-severity-low); }
+.pill-btn.sev-low.active,
+.pill-btn.sev-none.active { background: var(--color-severity-low); }
 .pill-btn.sev-med.active  { background: var(--color-severity-med); }
 .pill-btn.sev-high.active { background: var(--color-severity-high); }
 .pill-btn.time-btn.active { background: var(--color-primary); color: #fff; }
@@ -362,6 +363,8 @@ h1, h2, h3, .display { font-family: var(--font-display); font-weight: 600; }
   z-index: 1;
 }
 .history-table tbody tr {
+  -webkit-user-select: none;
+  user-select: none;
   border-bottom: 1.5px solid #ccc;
   transition: background 0.1s;
 }
@@ -665,6 +668,29 @@ h1, h2, h3, .display { font-family: var(--font-display); font-weight: 600; }
   cursor: pointer;
 }
 
+/* ── Log page greeting ────────────────────────── */
+.log-greeting-wrap {
+  padding: 22px 20px 0;
+}
+.greeting-heading {
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+.greeting-sub {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* ── Disabled pill group ──────────────────────── */
+.pill-group.disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 /* ── Login page ───────────────────────────────── */
 .auth-shell {
   min-height: 100dvh;
@@ -699,6 +725,45 @@ h1, h2, h3, .display { font-family: var(--font-display); font-weight: 600; }
   border-radius: 16px;
   text-align: center;
   font-weight: 600;
+}
+.marketing-lede {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin: 10px 0 6px;
+}
+.marketing-sub {
+  text-align: center;
+  color: #444;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  margin: 0 0 16px;
+}
+.marketing-bullets {
+  list-style: none;
+  padding: 14px 16px;
+  margin: 0 0 20px;
+  background: var(--accent-light2);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.92rem;
+  color: #1A1A1A;
+}
+.marketing-bullets li {
+  position: relative;
+  padding-left: 20px;
+  line-height: 1.4;
+}
+.marketing-bullets li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: var(--accent);
+  font-weight: 700;
 }
 
 /* ── Settings / Admin shared ─────────────────── */

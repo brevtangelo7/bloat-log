@@ -17,7 +17,7 @@ create table if not exists public.entries (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles(id) on delete cascade,
   foods text,
-  severity text check (severity in ('Low', 'Medium', 'High') or severity is null or severity = ''),
+  severity text check (severity in ('None', 'Low', 'Medium', 'High') or severity is null or severity = ''),
   time_to_bloat text,
   note text,
   created_at timestamptz not null default now()

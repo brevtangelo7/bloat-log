@@ -5,6 +5,13 @@ export function renderLoginPage(root) {
     <div class="auth-shell">
       <div class="auth-card">
         <h1 class="auth-title">Bloat Log 🌿</h1>
+        <p class="marketing-lede">Bloating? Think it's food?</p>
+        <p class="marketing-sub">Note what you eat and find patterns.</p>
+        <ul class="marketing-bullets">
+          <li>Simple no-fuss entry.</li>
+          <li>See which foods caused most bloat.</li>
+          <li>Export summaries to share with drs, nutritionist, or dietician.</li>
+        </ul>
         <p class="auth-sub">Sign in with a magic link</p>
         <div id="login-form">
           <div class="form-group">

@@ -22,7 +22,7 @@ export function severityBadge(sev) {
 }
 
 export function sevToNum(s) {
-  return s === 'High' ? 3 : s === 'Medium' ? 2 : s === 'Low' ? 1 : 0;
+  return s === 'High' ? 3 : s === 'Medium' ? 2 : (s === 'Low' || s === 'None') ? 1 : 0;
 }
 
 export function downloadCSV(entries) {

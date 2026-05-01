@@ -46,10 +46,10 @@ export async function renderAdminPage(root, { user, isAdmin }, nav) {
           <table class="admin-user-table" id="user-table">
             <thead>
               <tr>
-                <th>Name</th><th>Email</th><th>Joined</th><th>Last seen</th><th>Entries</th><th>Status</th><th>Actions</th>
+                <th>Name</th><th>Joined</th><th>Last seen</th><th>Entries</th><th>Status</th><th>Actions</th>
               </tr>
             </thead>
-            <tbody><tr><td colspan="7" style="padding:14px">Loading…</td></tr></tbody>
+            <tbody><tr><td colspan="6" style="padding:14px">Loading…</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -63,17 +63,6 @@ export async function renderAdminPage(root, { user, isAdmin }, nav) {
       adminCountEntries(),
       adminCountEntriesPerUser(),
     ]);
-
-    // Fetch emails via a best-effort join (public.profiles doesn't have email;
-    // emails live in auth.users which is not exposed by default). Admin can
-    // expose them via an RPC or view. As a fallback, show the user id prefix.
-    let emails = {};
-    try {
-      const { data } = await supabase.rpc('admin_user_emails');
-      if (Array.isArray(data)) emails = Object.fromEntries(data.map(r => [r.id, r.email]));
-    } catch {
-      // RPC not present — that's fine, email column just shows '—'
-    }
 
     const now = Date.now();
     const days = d => d * 24 * 60 * 60 * 1000;
@@ -94,11 +83,9 @@ export async function renderAdminPage(root, { user, isAdmin }, nav) {
     const tbody = main.querySelector('#user-table tbody');
     const fmt = ts => ts ? new Date(ts).toLocaleDateString() : '—';
     tbody.innerHTML = profiles.map(p => {
-      const email = emails[p.id] || '—';
       return `
       <tr data-id="${p.id}" class="${p.is_disabled ? 'disabled' : ''}">
         <td>${escAttr(p.display_name) || '<span class="dash">—</span>'}</td>
-        <td>${escAttr(email)}</td>
         <td>${fmt(p.created_at)}</td>
         <td>${fmt(p.last_seen_at)}</td>
         <td>${entriesByUser[p.id] || 0}</td>
@@ -109,7 +96,7 @@ export async function renderAdminPage(root, { user, isAdmin }, nav) {
             : '<button class="btn-sm danger btn-disable">Disable</button>'}
         </td>
       </tr>`;
-    }).join('') || `<tr><td colspan="7" style="padding:14px">No users yet.</td></tr>`;
+    }).join('') || `<tr><td colspan="6" style="padding:14px">No users yet.</td></tr>`;
 
     tbody.addEventListener('click', async e => {
       const row = e.target.closest('tr[data-id]');

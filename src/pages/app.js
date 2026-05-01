@@ -9,7 +9,8 @@ import {
 import { track } from '../analytics.js';
 
 let entries = [];
-let activeTab = 'log';
+const VALID_TABS = ['log', 'history', 'charts'];
+let activeTab = readSavedTab();
 let user = null;
 let isAdmin = false;
 let currentProfile = null;
@@ -18,6 +19,16 @@ let selectedSeverity = '';
 let selectedTTB = '';
 
 const LOCAL_STORAGE_KEY = 'bloatlog_entries';
+const VISITED_KEY = 'bloatlog_visited';
+const ACTIVE_TAB_KEY = 'bloatlog_active_tab';
+
+function readSavedTab() {
+  try {
+    const t = localStorage.getItem(ACTIVE_TAB_KEY);
+    if (t && VALID_TABS.includes(t)) return t;
+  } catch {}
+  return 'log';
+}
 
 export async function renderAppPage(root, { user: u, profile, isAdmin: admin }, nav) {
   user = u;
@@ -37,7 +48,8 @@ export async function renderAppPage(root, { user: u, profile, isAdmin: admin }, 
   const main = document.createElement('main');
   main.className = 'tab-content';
   main.innerHTML = `
-    <section id="tab-log" class="tab-panel active">
+    <section id="tab-log" class="tab-panel${activeTab === 'log' ? ' active' : ''}">
+      ${buildGreetingHTML()}
       <div class="tab-header"><h2>📝 Log Entry</h2></div>
       <div class="form-section" style="padding: 16px 20px;">
         <div class="form-group">
@@ -47,7 +59,7 @@ export async function renderAppPage(root, { user: u, profile, isAdmin: admin }, 
         <div class="form-group">
           <label class="form-label">🌡️ Bloating Severity</label>
           <div class="pill-group" id="severity-group">
-            <button class="pill-btn sev-low"  data-sev="Low">  🟢 Low</button>
+            <button class="pill-btn sev-none" data-sev="None">🟢 None</button>
             <button class="pill-btn sev-med"  data-sev="Medium">🟡 Med</button>
             <button class="pill-btn sev-high" data-sev="High"> 🔴 High</button>
           </div>
@@ -70,14 +82,14 @@ export async function renderAppPage(root, { user: u, profile, isAdmin: admin }, 
         <button class="btn-primary" id="btn-log">✨ Log Entry</button>
       </div>
     </section>
-    <section id="tab-history" class="tab-panel">
+    <section id="tab-history" class="tab-panel${activeTab === 'history' ? ' active' : ''}">
       <div class="tab-header" style="display:flex;align-items:center;justify-content:space-between;">
         <h2>📋 History</h2>
         <button class="btn-csv" id="btn-download-csv">⬇️ CSV</button>
       </div>
       <div id="history-list"></div>
     </section>
-    <section id="tab-charts" class="tab-panel">
+    <section id="tab-charts" class="tab-panel${activeTab === 'charts' ? ' active' : ''}">
       <div class="tab-header"><h2>📊 Patterns</h2></div>
       <div style="padding: 12px 0 0;"><button class="btn-export" id="btn-export">📤 Export Report</button></div>
       <div class="charts-content" style="margin-top: 16px;">
@@ -114,17 +126,48 @@ export async function renderAppPage(root, { user: u, profile, isAdmin: admin }, 
 
   if (activeTab === 'history') renderHistory();
   if (activeTab === 'charts') renderCharts();
+
+  try { localStorage.setItem(VISITED_KEY, '1'); } catch {}
 }
 
 function switchTab(tab) {
   activeTab = tab;
+  try { localStorage.setItem(ACTIVE_TAB_KEY, tab); } catch {}
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
   if (tab === 'history') renderHistory();
   if (tab === 'charts') renderCharts();
 }
 
+/* ── GREETING ──────────────────────────────────── */
+function buildGreetingHTML() {
+  const name = currentProfile?.display_name || '';
+  let returning = false;
+  try { returning = localStorage.getItem(VISITED_KEY) === '1'; } catch {}
+  let heading;
+  if (returning && name) heading = `Welcome back, ${esc(name)}!`;
+  else if (returning) heading = 'Welcome back!';
+  else if (name) heading = `Hi, ${esc(name)}!`;
+  else heading = 'Hi there!';
+  return `
+    <div class="log-greeting-wrap">
+      <h2 class="greeting-heading">${heading}</h2>
+      <p class="greeting-sub">Make an entry when you bloat, but also when you eat and don't bloat, to rule out common dietary triggers.</p>
+    </div>`;
+}
+
 /* ── LOG ───────────────────────────────────────── */
+function updateTTBState() {
+  const ttbGroup = document.getElementById('ttb-group');
+  if (!ttbGroup) return;
+  const isNone = selectedSeverity === 'None';
+  ttbGroup.classList.toggle('disabled', isNone);
+  if (isNone) {
+    selectedTTB = '';
+    ttbGroup.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+  }
+}
+
 function wireLogForm() {
   selectedSeverity = '';
   selectedTTB = '';
@@ -141,9 +184,11 @@ function wireLogForm() {
       document.querySelectorAll('#severity-group .pill-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     }
+    updateTTBState();
   });
 
   document.getElementById('ttb-group').addEventListener('click', e => {
+    if (selectedSeverity === 'None') return;
     const btn = e.target.closest('.pill-btn[data-ttb]');
     if (!btn) return;
     const val = btn.dataset.ttb;
@@ -242,8 +287,8 @@ function buildHistoryRow(e) {
 }
 
 function buildEditForm(e) {
-  const sevOptions = ['Low', 'Medium', 'High'].map(s =>
-    `<button class="pill-btn sev-${s.toLowerCase()} ${e.severity === s ? 'active' : ''}" data-sev="${s}">${s === 'Low' ? '🟢' : s === 'Medium' ? '🟡' : '🔴'} ${s === 'Medium' ? 'Med' : s}</button>`
+  const sevOptions = ['None', 'Medium', 'High'].map(s =>
+    `<button class="pill-btn sev-${s === 'None' ? 'none' : s.toLowerCase()} ${(e.severity === s || (s === 'None' && e.severity === 'Low')) ? 'active' : ''}" data-sev="${s}">${s === 'Medium' ? '🟡' : s === 'High' ? '🔴' : '🟢'} ${s === 'Medium' ? 'Med' : s}</button>`
   ).join('');
   const ttbOptions = [
     ['Before finishing eating', 'Before finishing'],
@@ -375,14 +420,15 @@ function attachEditFormEvents(card, id) {
 function renderCharts() {
   // Chart 1
   const sevEntries = entries.filter(e => e.severity && e.foods);
-  const sevGroups = { High: new Set(), Medium: new Set(), Low: new Set() };
+  const sevGroups = { High: new Set(), Medium: new Set(), Low: new Set(), None: new Set() };
   sevEntries.forEach(e => {
+    if (!sevGroups[e.severity]) return;
     e.foods.split(',').map(f => f.trim().toLowerCase()).filter(Boolean)
       .forEach(f => sevGroups[e.severity].add(f));
   });
   const chart1wrap = document.getElementById('chart1-wrap');
   const chart1empty = document.getElementById('chart1-empty');
-  const hasAnySev = sevGroups.High.size || sevGroups.Medium.size || sevGroups.Low.size;
+  const hasAnySev = sevGroups.High.size || sevGroups.Medium.size || sevGroups.Low.size || sevGroups.None.size;
   if (!hasAnySev) {
     chart1wrap.innerHTML = '';
     chart1empty.style.display = 'block';
@@ -392,6 +438,7 @@ function renderCharts() {
       { label: '🔴 High', foods: sevGroups.High },
       { label: '🟡 Medium', foods: sevGroups.Medium },
       { label: '🟢 Low', foods: sevGroups.Low },
+      { label: '🟢 None', foods: sevGroups.None },
     ].filter(r => r.foods.size).map(r => `
       <tr>
         <td style="white-space:nowrap;font-weight:600">${r.label}</td>
@@ -512,8 +559,9 @@ export function exportReport(entriesList, displayName = '') {
   const reportTitle = displayName ? `Bloat Log Report for ${displayName}` : 'Bloat Log Report';
 
   // Chart 1 — severity table (matches in-app view)
-  const sevGroups = { High: new Set(), Medium: new Set(), Low: new Set() };
+  const sevGroups = { High: new Set(), Medium: new Set(), Low: new Set(), None: new Set() };
   sorted.filter(e => e.severity && e.foods).forEach(e => {
+    if (!sevGroups[e.severity]) return;
     e.foods.split(',').map(f => f.trim().toLowerCase()).filter(Boolean)
       .forEach(f => sevGroups[e.severity].add(f));
   });
@@ -521,6 +569,7 @@ export function exportReport(entriesList, displayName = '') {
     { label: '🔴 High', foods: sevGroups.High },
     { label: '🟡 Medium', foods: sevGroups.Medium },
     { label: '🟢 Low', foods: sevGroups.Low },
+    { label: '🟢 None', foods: sevGroups.None },
   ].filter(r => r.foods.size).map(r =>
     `<tr><td style="white-space:nowrap;font-weight:600">${r.label}</td><td>${esc([...r.foods].join(', '))}</td></tr>`
   ).join('');
