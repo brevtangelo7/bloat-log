@@ -21,6 +21,11 @@ let selectedTTB = '';
 const LOCAL_STORAGE_KEY = 'bloatlog_entries';
 const VISITED_KEY = 'bloatlog_visited';
 const ACTIVE_TAB_KEY = 'bloatlog_active_tab';
+const PROFILE_NAME_KEY = 'bloatlog_profile_name';
+
+function getCachedName() {
+  try { return localStorage.getItem(PROFILE_NAME_KEY) || ''; } catch { return ''; }
+}
 
 function readSavedTab() {
   try {
@@ -34,6 +39,7 @@ export async function renderAppPage(root, { user: u, profile, isAdmin: admin }, 
   user = u;
   isAdmin = admin;
   currentProfile = profile;
+  try { if (profile?.display_name) localStorage.setItem(PROFILE_NAME_KEY, profile.display_name); } catch {}
 
   root.innerHTML = '';
   const header = renderHeader({
@@ -141,7 +147,7 @@ function switchTab(tab) {
 
 /* ── GREETING ──────────────────────────────────── */
 function buildGreetingHTML() {
-  const name = currentProfile?.display_name || '';
+  const name = currentProfile?.display_name || getCachedName();
   let returning = false;
   try { returning = localStorage.getItem(VISITED_KEY) === '1'; } catch {}
   let heading;

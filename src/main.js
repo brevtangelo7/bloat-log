@@ -79,16 +79,19 @@ onAuthChange(async (event, session) => {
     setHash('login');
     return;
   }
-  if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+  if (event === 'SIGNED_IN') {
     if (session) {
-      // Force profile refresh on sign-in
-      current.user = null;
+      current.user = null; // force profile refresh on new sign-in
       await render(parseHash() || 'app');
-      if (event === 'SIGNED_IN' && shouldShowInstallPrompt()) {
-        setTimeout(showInstallPrompt, 800);
-      }
+      if (shouldShowInstallPrompt()) setTimeout(showInstallPrompt, 800);
     }
+    return;
   }
+  if (event === 'INITIAL_SESSION' && session && !current.user) {
+    // Only render if the boot render hasn't already loaded the user
+    await render(parseHash() || 'app');
+  }
+  // TOKEN_REFRESHED: session updated silently, no re-render needed
 });
 
 // Hash change (user clicks back/forward)
